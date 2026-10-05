@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X } from 'lucide-react';
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [sortBy, setSortBy] = useState('dueDate');
   const [projects, setProjects] = useState([]);
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -125,6 +129,38 @@ const Tasks = () => {
     }
   };
 
+  const filteredTasks = tasks
+    .filter((task) => {
+      const query = search.trim().toLowerCase();
+      const matchesSearch = !query || [
+        task.title,
+        task.description,
+        task.projectTitle,
+        task.assigneeName,
+      ].some((value) => value?.toLowerCase().includes(query));
+
+      return matchesSearch
+        && (!statusFilter || task.status === statusFilter)
+        && (!priorityFilter || task.priority === priorityFilter);
+    })
+    .sort((a, b) => {
+      if (sortBy === 'priority') {
+        const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+        return priorityOrder[a.priority] - priorityOrder[b.priority];
+      }
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+      return (a.dueDate || '9999-12-31').localeCompare(b.dueDate || '9999-12-31');
+    });
+
+  const clearFilters = () => {
+    setSearch('');
+    setStatusFilter('');
+    setPriorityFilter('');
+    setSortBy('dueDate');
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -139,7 +175,60 @@ const Tasks = () => {
         )}
       </div>
 
+      <section className="task-filters" aria-label="Filter and sort tasks">
+        <label className="task-search">
+          <Search size={18} aria-hidden="true" />
+          <input
+            type="search"
+            className="form-control"
+            placeholder="Search tasks, projects, or assignees"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            aria-label="Search tasks"
+          />
+        </label>
+        <select
+          className="form-control"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          aria-label="Filter by status"
+        >
+          <option value="">All statuses</option>
+          <option value="PENDING">Pending</option>
+          <option value="IN_PROGRESS">In progress</option>
+          <option value="COMPLETED">Completed</option>
+        </select>
+        <select
+          className="form-control"
+          value={priorityFilter}
+          onChange={(event) => setPriorityFilter(event.target.value)}
+          aria-label="Filter by priority"
+        >
+          <option value="">All priorities</option>
+          <option value="HIGH">High</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="LOW">Low</option>
+        </select>
+        <select
+          className="form-control"
+          value={sortBy}
+          onChange={(event) => setSortBy(event.target.value)}
+          aria-label="Sort tasks"
+        >
+          <option value="dueDate">Sort: Due date</option>
+          <option value="priority">Sort: Priority</option>
+          <option value="title">Sort: Title</option>
+        </select>
+        <button type="button" className="btn-icon task-clear-filters" onClick={clearFilters}>
+          <X size={18} aria-hidden="true" />
+          Clear
+        </button>
+      </section>
+
       <div className="table-container">
+        <div className="task-results-count">
+          Showing {filteredTasks.length} of {tasks.length} tasks
+        </div>
         <table>
           <thead>
             <tr>
@@ -153,7 +242,7 @@ const Tasks = () => {
             </tr>
           </thead>
           <tbody>
-            {tasks.map(task => (
+            {filteredTasks.map(task => (
               <tr key={task.id}>
                 <td style={{ fontWeight: 500 }}>{task.title}</td>
                 <td>{task.projectTitle}</td>
@@ -186,10 +275,10 @@ const Tasks = () => {
                 )}
               </tr>
             ))}
-            {tasks.length === 0 && (
+            {filteredTasks.length === 0 && (
               <tr>
                 <td colSpan={isAdmin ? 7 : 6} style={{ textAlign: 'center', padding: '2rem' }}>
-                  No tasks found.
+                  {tasks.length === 0 ? 'No tasks found.' : 'No tasks match your search or filters.'}
                 </td>
               </tr>
             )}

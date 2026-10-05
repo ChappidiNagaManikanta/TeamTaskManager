@@ -1,0 +1,18 @@
+# Java / Maven
+backend/target/
+backend/run.log
+backend/run2.log
+backend/run.err
+backend/run2.err
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

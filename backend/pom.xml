@@ -14,7 +14,7 @@
 	<name>Team Task Manager</name>
 	<description>Backend for Team Task Manager</description>
 	<properties>
-		<java.version>17</java.version>
+	<java.version>17</java.version>
 	</properties>
 	<dependencies>
 		<!-- Web -->
